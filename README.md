@@ -4,7 +4,7 @@ Firmware sources for the Port MuxR
 
 ## Installation
 
-Requires the port_muxr_board files to compile under the Arduino IDE.
+Please see https://sensordots.org/portmuxr_arduino
 
 ## Firmware Versions
 The Port MuxR can be queried for its firmware version with the z serial command. 
