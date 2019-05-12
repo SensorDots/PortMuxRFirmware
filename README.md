@@ -5,13 +5,14 @@ Firmware sources for the Port MuxR
 ## Installation
 
 For setting up the Arduino environment for development or firmware update, please see https://sensordots.org/portmuxr_arduino
+
 To load the latest precompiled hex file without installing the Arduino IDE you can use avrdude with the following command (substitute /dev/ttyUSBx with comX under Windows):
 
 avrdude -v -p atmega328pb -c arduino -P /dev/ttyUSB0 -b 57600 -D -U flash:w:portmuxr.hex:i
 
 You should get the following output:
 
-avrdude: Version 6.3, compiled on Feb 17 2016 at 09:25:53
+    avrdude: Version 6.3, compiled on Feb 17 2016 at 09:25:53
          Copyright (c) 2000-2005 Brian Dean, http://www.bdmicro.com/
          Copyright (c) 2007-2014 Joerg Wunsch
 
@@ -57,35 +58,35 @@ avrdude: Version 6.3, compiled on Feb 17 2016 at 09:25:53
          Varef           : 0.3 V
          Oscillator      : 28.800 kHz
          SCK period      : 3.3 us
-
-avrdude: AVR device initialized and ready to accept instructions
-
-Reading | ################################################## | 100% 0.02s
-
-avrdude: Device signature = 0x1e9516 (probably m328pb)
-avrdude: safemode: hfuse reads as 0
-avrdude: safemode: efuse reads as 0
-avrdude: reading input file "portmuxr_v1_00.hex"
-avrdude: writing flash (12480 bytes):
-
-Writing | ################################################## | 100% 4.14s
-
-avrdude: 12480 bytes of flash written
-avrdude: verifying flash memory against portmuxr_v1_00.hex:
-avrdude: load data flash data from input file portmuxr_v1_00.hex:
-avrdude: input file portmuxr_v1_00.hex contains 12480 bytes
-avrdude: reading on-chip flash data:
-
-Reading | ################################################## | 100% 3.82s
-
-avrdude: verifying ...
-avrdude: 12480 bytes of flash verified
-
-avrdude: safemode: hfuse reads as 0
-avrdude: safemode: efuse reads as 0
-avrdude: safemode: Fuses OK (E:00, H:00, L:00)
-
-avrdude done.  Thank you.
+    
+    avrdude: AVR device initialized and ready to accept instructions
+    
+    Reading | ################################################## | 100% 0.02s
+    
+    avrdude: Device signature = 0x1e9516 (probably m328pb)
+    avrdude: safemode: hfuse reads as 0
+    avrdude: safemode: efuse reads as 0
+    avrdude: reading input file "portmuxr_v1_00.hex"
+    avrdude: writing flash (12480 bytes):
+    
+    Writing | ################################################## | 100% 4.14s
+    
+    avrdude: 12480 bytes of flash written
+    avrdude: verifying flash memory against portmuxr_v1_00.hex:
+    avrdude: load data flash data from input file portmuxr_v1_00.hex:
+    avrdude: input file portmuxr_v1_00.hex contains 12480 bytes
+    avrdude: reading on-chip flash data:
+    
+    Reading | ################################################## | 100% 3.82s
+    
+    avrdude: verifying ...
+    avrdude: 12480 bytes of flash verified
+    
+    avrdude: safemode: hfuse reads as 0
+    avrdude: safemode: efuse reads as 0
+    avrdude: safemode: Fuses OK (E:00, H:00, L:00)
+    
+    avrdude done.  Thank you.
 
 
 ## Firmware Versions
