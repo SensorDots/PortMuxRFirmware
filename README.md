@@ -5,11 +5,10 @@ Firmware sources for the Port MuxR
 ## Installation
 
 For setting up the Arduino environment for development or firmware update, please see https://sensordots.org/portmuxr_arduino
-To load the latest precompiled hex file without installing the Arduino IDE, use Xloader on Windows (https://www.hobbytronics.co.uk/arduino-xloader) or inotool on Linux (http://inotool.org/). Note the bootloader upload baud rate is 57600. 
+To load the latest precompiled hex file without installing the Arduino IDE you can use avrdude with the following command (substitute /dev/ttyUSBx with comX under Windows):
 
-Xloader requires updating of the version of avrdude that is included and the following line added to the devices.txt:
+avrdude -v -p atmega328pb -c arduino -P /dev/ttyUSB0 -b 57600 -D -U flash:w:portmuxr.hex:i
 
-PortMuxr;m328pb;stk500;57600;
 
 ## Firmware Versions
 The Port MuxR can be queried for its firmware version with the z serial command. 
