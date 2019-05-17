@@ -92,7 +92,7 @@ You should get the following output:
 ## Firmware Versions
 The Port MuxR can be queried for its firmware version with the z serial command. 
 
-   - v1_00 - Release Version
+   - v1_00 - Release Version - https://github.com/SensorDots/PortMuxRFirmware/commit/463ab5feef9b8fb956a4d9e0db8824780c17636a
 
 ## Serial Menu
 
