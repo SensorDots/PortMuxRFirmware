@@ -22,11 +22,13 @@
 #include "I2Cdev.h"
 #include "port_muxr_firmware.h"
 #include <util/delay.h>
+#include <avr/sleep.h>
+#include <avr/power.h>
 #include <Wire.h>
 #include <Wire1.h>
 #include <EEPROM.h>
 
-#define FIRMWARE_VERSION "v1_00"
+#define FIRMWARE_VERSION "v1_10"
 
 /***                        ***/
 /*** Global State Variables ***/
@@ -50,10 +52,13 @@ uint32_t group_matrix[NUM_OF_GROUPS] = {0};
 uint32_t port_state = 0;
 uint8_t operating_mode = 0;
 uint16_t mode_delay = 200;
+
 uint8_t board_address = 0x50;
 
-uint8_t serial_buffer[BUFFER_SIZE];
 uint8_t i2c_buffer[I2C_BUFFER_SIZE];
+uint8_t i2c_ret_data_buffer[I2C_BUFFER_SIZE];
+uint8_t i2c_ret_data_buffer_len = 0;
+uint8_t i2c_receive_command_ready = 0;
 
 TCA6424A digital_io;
 
@@ -196,7 +201,7 @@ void receiveEvent(int bytes_received)
       Wire.read();  // if receive more data than allowed just throw it away
     }
   }
-  processCommand(i2c_buffer, 0, 2, NULL);
+  i2c_receive_command_ready = 1;
 
 }
 
@@ -205,19 +210,11 @@ void receiveEvent(int bytes_received)
 */
 void requestEvent() {
   uint8_t i = 0;
-  while (0 < Wire.available() && i < I2C_BUFFER_SIZE ) { 
-    uint8_t c = Wire.read(); // receive byte
-    i2c_buffer[i] = c;
-    i++;
-  }
 
-  uint8_t ret_array[24] = {0};
-  uint8_t ret = processCommand(i2c_buffer, 0, 3, ret_array);
-
-  i = 0;
+  uint8_t ret = i2c_ret_data_buffer_len;
   while (ret > 0)
   {
-    Wire.write(ret_array[i]);
+    Wire.write(i2c_ret_data_buffer[i]);
     i++;
     ret--;
   }
@@ -259,9 +256,17 @@ void setup() {
   pinMode(ADDR1, INPUT);
   pinMode(ADDR2, INPUT);
 
+  //Set sleep modes
+  set_sleep_mode(SLEEP_MODE_IDLE);
+  power_adc_disable();
+  power_timer0_disable();
+  power_timer1_disable();
+  power_timer2_disable();
+
   //Initialise slave (Wire)
   Wire.begin(board_address);
   Wire.onReceive(receiveEvent);
+  Wire.onRequest(requestEvent);
 
   //Initialize the LED pin as an output.
   pinMode(LED_STAT, OUTPUT);
@@ -294,9 +299,12 @@ void loop() {
   uint8_t char_position = 0;
   int8_t read_char = 0;
 
+  uint8_t serial_buffer[BUFFER_SIZE];
+
   memset(serial_buffer, 0, BUFFER_SIZE);
 
-  while (read_char != '\r' && read_char != '\n' && char_position < BUFFER_SIZE)
+  // Note, if i2c command comes in, it will cancel an existing serial command
+  while (read_char != '\r' && read_char != '\n' && char_position < BUFFER_SIZE && !i2c_receive_command_ready)
   {
     if (Serial.available()) {
       read_char = Serial.read();
@@ -306,26 +314,35 @@ void loop() {
         char_position++;
       }
     }
+    //sleep_mode();
     serial_delay();
   }
 
-  Serial.println("");
-
-  char_position = {0};
-
   digitalWrite(LED_STAT, LOW);   // set the LED on
-  delayMs(30);
+
+  if (i2c_receive_command_ready)
+  {
+    i2c_ret_data_buffer_len = processCommand(i2c_buffer, 0, 2, i2c_ret_data_buffer); 
+    i2c_receive_command_ready = 0;
+  } else {
+
+    Serial.println("");
+
+    char_position = 0;
+
+
+    delayMs(30);
 
 process_next_command:
 
-  char_position = processCommand(serial_buffer, char_position, 1, NULL);
+    char_position = processCommand(serial_buffer, char_position, 1, NULL);
 
-  read_char = serial_buffer[char_position];
-  char_position++;
-  if (read_char == ',') {
-    goto process_next_command;
+    read_char = serial_buffer[char_position];
+    char_position++;
+    if (read_char == ',') {
+      goto process_next_command;
+    }
   }
-
   digitalWrite(LED_STAT, HIGH); // set the LED off
 
 }
@@ -335,8 +352,7 @@ process_next_command:
    @param char_position charater position of cmd array
    @param serial_mode:
    if serial_mode == 1; then serial and return value = char_pos
-   if serial_mode == 2; then i2c receive (master write) and return value is "don't care"
-   if serial_mode == 3; then i2c request (master read) and return value = return array length (-1 is error)
+   if serial_mode == 2; then i2c receive and return value = return array length if applicable (-1 is error)
    @param ret_array i2c return array, can be NULL if mode is serial
    @return return value depends on i2c or serial command (see above)
 */
@@ -393,7 +409,6 @@ int8_t processCommand(uint8_t * cmd, uint8_t char_position, uint8_t serial_mode,
     /*case '*':
       char_position++;
       setPort(0, 1);
-      serial_delay();
       for (uint8_t i = 1; i < 8; i++)
       {
         //turn on next
@@ -425,10 +440,10 @@ int8_t processCommand(uint8_t * cmd, uint8_t char_position, uint8_t serial_mode,
         }
         Serial.println("");
       } else {
-        for (uint8_t i = 0; i < 24; i++)
+        for (uint8_t i = 0; i < 3; i++)
         {
-          ret_array[i] = ((port_state >> i) & 0x01);
-          return 24;
+          ret_array[i] = ((port_state >> i * 8) & 0xFF);
+          return 3;
         }
       }
 
@@ -438,13 +453,13 @@ int8_t processCommand(uint8_t * cmd, uint8_t char_position, uint8_t serial_mode,
     case 'd':
       char_position++;
 
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[0] = read_char;
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[1] = read_char;
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[2] = read_char;
       mode_delay_temp = atoi(temp_buffer);
@@ -470,13 +485,12 @@ int8_t processCommand(uint8_t * cmd, uint8_t char_position, uint8_t serial_mode,
     case 'v':
       char_position++;
 
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[0] = read_char;
       port = atoi(temp_buffer);
-      serial_delay();
 
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[0] = read_char;
       state = atoi(temp_buffer);
@@ -488,21 +502,20 @@ int8_t processCommand(uint8_t * cmd, uint8_t char_position, uint8_t serial_mode,
 
     /* Set port state */
     case 'p':
+
       if (!vcc_set) {
         char_position++;
 
-        read_char = serial_buffer[char_position];
+        read_char = cmd[char_position];
         char_position++;
         temp_buffer[0] = read_char;
         port = atoi(temp_buffer);
-        serial_delay();
 
-        read_char = serial_buffer[char_position];
+        read_char = cmd[char_position];
         char_position++;
         channel = read_char;
-        serial_delay();
 
-        read_char = serial_buffer[char_position];
+        read_char = cmd[char_position];
         char_position++;
         temp_buffer[0] = read_char;
         state = atoi(temp_buffer);
@@ -573,7 +586,7 @@ int8_t processCommand(uint8_t * cmd, uint8_t char_position, uint8_t serial_mode,
     case 'm':
       char_position++;
 
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[0] = read_char;
       mode = atoi(temp_buffer);
@@ -603,7 +616,7 @@ int8_t processCommand(uint8_t * cmd, uint8_t char_position, uint8_t serial_mode,
     case 'a':
       char_position++;
 
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[0] = read_char;
       state = atoi(temp_buffer);
@@ -639,17 +652,15 @@ int8_t processCommand(uint8_t * cmd, uint8_t char_position, uint8_t serial_mode,
     case 'G':
       char_position++;
 
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[0] = read_char;
       group = atoi(temp_buffer);
-      serial_delay();
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[0] = read_char;
       port = atoi(temp_buffer);
-      serial_delay();
-      channel = serial_buffer[char_position];
+      channel = cmd[char_position];
       char_position++;
 
       if (group >= 1 && group <= NUM_OF_GROUPS)
@@ -741,13 +752,12 @@ int8_t processCommand(uint8_t * cmd, uint8_t char_position, uint8_t serial_mode,
     case 'x':
       char_position++;
 
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[0] = read_char;
       group = atoi(temp_buffer);
-      serial_delay();
 
-      read_char = serial_buffer[char_position];
+      read_char = cmd[char_position];
       char_position++;
       temp_buffer[0] = read_char;
       state = atoi(temp_buffer);

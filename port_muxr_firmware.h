@@ -103,7 +103,7 @@ void printMenu()
     Serial.println(F("r         - reset groups"));
     Serial.println(F("m[m]      - set operate mode"));
     printMenuSpace();
-    Serial.println(F(            "e.g. m1 - set bbm"));
+    Serial.println(F(            "e.g. m1 -set bbm"));
     Serial.println(F("d[ms]     - mode switch delay ms<=900"));
     Serial.println(F("z         - check fw vers"));
     Serial.println(F("[options] - s =state (1=on/0=off)"));

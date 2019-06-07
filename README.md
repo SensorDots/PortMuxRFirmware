@@ -93,6 +93,7 @@ You should get the following output:
 The Port MuxR can be queried for its firmware version with the z serial command. 
 
    - v1_00 - Release Version
+   - v1_10 - Fix I2C lockups and minor bugs.
 
 ## Serial Menu
 
