@@ -1,6 +1,6 @@
 # SensorDots Port MuxR Firmware
 
-Firmware sources for the Port MuxR
+Firmware sources for the Port MuxR - https://www.tindie.com/products/blecky/sensordots-port-muxr/
 
 ## Installation
 
