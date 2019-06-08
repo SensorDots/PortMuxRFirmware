@@ -190,26 +190,31 @@ void updateGroupEEPROM() {
 */
 void receiveEvent(int bytes_received)
 {
-  for (int i = 0; i < bytes_received; i++)
-  {
-    if (i < I2C_BUFFER_SIZE && Wire.available())
+  //Prevent interruption of currently operating command
+  if (i2c_receive_command_ready == 0) { 
+    for (int i = 0; i < bytes_received; i++)
     {
-      i2c_buffer[i] = Wire.read();
+      if (i < I2C_BUFFER_SIZE && Wire.available())
+      {
+        i2c_buffer[i] = Wire.read();
+      }
+      else
+      {
+        Wire.read();  //If receive more data than allowed just throw it away
+      }
     }
-    else
-    {
-      Wire.read();  // if receive more data than allowed just throw it away
-    }
+    i2c_receive_command_ready = 1;
   }
-  i2c_receive_command_ready = 1;
-
+  
+  //Flush Wire Buffer
+  while (Wire.available()) Wire.read();
 }
 
 /** Function that executes whenever data is requested over i2c
    @return void
 */
 void requestEvent() {
-  Wire.write(i2c_ret_data_buffer,i2c_ret_data_buffer_len);
+  Wire.write(i2c_ret_data_buffer, i2c_ret_data_buffer_len);
 }
 
 /***             ***/
@@ -314,7 +319,7 @@ void loop() {
 
   if (i2c_receive_command_ready)
   {
-    i2c_ret_data_buffer_len = processCommand(i2c_buffer, 0, 2, i2c_ret_data_buffer); 
+    i2c_ret_data_buffer_len = processCommand(i2c_buffer, 0, 2, i2c_ret_data_buffer);
     i2c_receive_command_ready = 0;
   } else {
 
