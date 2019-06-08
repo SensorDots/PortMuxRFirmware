@@ -209,15 +209,7 @@ void receiveEvent(int bytes_received)
    @return void
 */
 void requestEvent() {
-  uint8_t i = 0;
-
-  uint8_t ret = i2c_ret_data_buffer_len;
-  while (ret > 0)
-  {
-    Wire.write(i2c_ret_data_buffer[i]);
-    i++;
-    ret--;
-  }
+  Wire.write(i2c_ret_data_buffer,i2c_ret_data_buffer_len);
 }
 
 /***             ***/
@@ -440,11 +432,11 @@ int8_t processCommand(uint8_t * cmd, uint8_t char_position, uint8_t serial_mode,
         }
         Serial.println("");
       } else {
-        for (uint8_t i = 0; i < 3; i++)
-        {
-          ret_array[i] = ((port_state >> i * 8) & 0xFF);
-          return 3;
-        }
+        ret_array[0] = (port_state >> 0) & 0xFF;
+        ret_array[1] = (port_state >> 8) & 0xFF;
+        ret_array[2] = (port_state >> 16) & 0xFF;
+        return 3;
+
       }
 
       break;
