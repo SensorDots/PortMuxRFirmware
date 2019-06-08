@@ -93,7 +93,7 @@ You should get the following output:
 The Port MuxR can be queried for its firmware version with the z serial command. 
 
    - v1_00 - Release Version - [commit](https://github.com/SensorDots/PortMuxRFirmware/commit/463ab5feef9b8fb956a4d9e0db8824780c17636a)
-   - v1_10 - Fix I2C lockups and minor bugs - [commit](https://github.com/SensorDots/PortMuxRFirmware/tree/20cc6428ed17f1a0573d80aa2a49a278f2a7bd1c)
+   - v1_10 - Fix I2C lockups and minor bugs - [commit](https://github.com/SensorDots/PortMuxRFirmware/tree/9da3761f1b9259e83aa3bc7a1281c669013ad2c5)
 
 ## Serial Menu
 
